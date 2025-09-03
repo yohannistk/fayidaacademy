@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ReferralSource {
+  Friend
+  TICTOK
+  AGENT
+  Facebook
+  Instagram
+  SCHOOL
+  Other
+}
+
+model Grade {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  students Student[]
+}
+
+model Student {
+  id             Int             @id @default(autoincrement())
+  firstName      String
+  lastName       String
+  grandName      String
+  age            Int
+  schoolName     String
+  city           String
+  region         String
+  email          String          @unique
+  password       String
+  gradeId        Int?
+  grade          Grade?          @relation(fields: [gradeId], references: [id])
+  referralSource ReferralSource?
+  createdAt      DateTime        @default(now())
+}

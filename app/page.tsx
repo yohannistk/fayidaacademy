@@ -2,7 +2,7 @@
 export default function Home() {
   return (
     <div className="">
-      <h1>Hellow World</h1>
+      <h1 className="">Fayida Academy</h1>
     </div>
   );
 }
