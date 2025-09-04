@@ -2,7 +2,7 @@
 import React, { PropsWithChildren } from 'react'
 const AuthLayout = ({children} : PropsWithChildren) => {
   return (
-    <div>
+    <div className='h-full'>
       {children}
     </div>
   )

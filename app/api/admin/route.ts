@@ -1,5 +1,5 @@
 import prisma from "@/app/lib/prisma";
-import { StudentSchema } from "@/app/schemas/students";
+import { AdminSchema } from "@/app/schemas/admin";
 import { hashPassword } from "@/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
@@ -7,7 +7,7 @@ import z from "zod";
 export async function GET() {
   const students = await prisma.users.findMany({
     omit: { password: true },
-    include: { student: true },
+    include: { admin: true },
   });
   return NextResponse.json({ students }, { status: 200 });
 }
@@ -38,7 +38,7 @@ export async function PUT() {}
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const parsedData = StudentSchema.safeParse(body);
+    const parsedData = AdminSchema.safeParse(body);
 
     if (!parsedData.success) {
       return NextResponse.json(
@@ -46,19 +46,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const {
-      firstName,
-      lastName,
-      grandName,
-      age,
-      schoolName,
-      city,
-      region,
-      email,
-      password,
-      gradeId,
-      referralSource,
-    } = parsedData.data;
+    const { firstName, lastName, email, password } = parsedData.data;
 
     const existingStudent = await prisma.users.findUnique({
       where: { email },
@@ -82,25 +70,19 @@ export async function POST(req: NextRequest) {
       data: {
         email,
         password: hashedPassword,
+        role: "ADMIN",
       },
     });
-    await prisma.students.create({
+    await prisma.admins.create({
       data: {
         userId: user.id,
         firstName,
         lastName,
-        grandName,
-        age,
-        schoolName,
-        city,
-        region,
-        gradeId: gradeId,
-        referralSource: referralSource,
       },
     });
 
     return NextResponse.json(
-      { message: `Student registered successfully` },
+      { message: `Admin registered successfully` },
       { status: 201 }
     );
   } catch (e) {

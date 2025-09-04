@@ -43,12 +43,12 @@ export async function DELETE(req: NextRequest) {
         { message: "Id is required to delete the grade" },
         { status: 400 }
       );
-    const grade = await prisma.grade.findUnique({ where: { id: +id } });
+    const grade = await prisma.grade.findUnique({ where: { id } });
 
     if (!grade)
       return NextResponse.json({ message: "Grade not found" }, { status: 404 });
 
-    const deleted = await prisma.grade.delete({ where: { id: +id } });
+    const deleted = await prisma.grade.delete({ where: { id } });
     return NextResponse.json(
       { message: `Grade with name ${deleted.name} deleted` },
       { status: 200 }
@@ -78,11 +78,11 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const grade = await prisma.grade.findUnique({ where: { id: +id } });
+    const grade = await prisma.grade.findUnique({ where: { id } });
     if (!grade)
       return NextResponse.json({ message: "Grade not found" }, { status: 404 });
 
-    await prisma.grade.update({ where: { id: +id }, data: { name } });
+    await prisma.grade.update({ where: { id }, data: { name } });
 
     return NextResponse.json(
       { message: `Grade created successfully with name ${name}` },
