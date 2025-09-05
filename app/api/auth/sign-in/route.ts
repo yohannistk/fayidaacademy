@@ -1,4 +1,4 @@
-import prisma from "@/app/lib/prisma";
+import prisma from "@/lib/prisma";
 import { SignInSchema } from "@/app/schemas/auth";
 import {
   comparePassword,
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         {
-          message: "Email or password is incorect",
+          error: "Email or password is incorect",
         },
         { status: 404 }
       );
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     if (!isPasswordCorrect) {
       return NextResponse.json(
         {
-          message: "Email or password is incorect",
+          error: "Email or password is incorect",
         },
         { status: 404 }
       );
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     if (sessionCount >= +MAX_DEVICES) {
       return NextResponse.json(
         {
-          message:
+          error:
             "You can only be logged in on a maximum of 2 devices at the same time.",
         },
         { status: 403 }
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const sessionId = crypto.randomUUID();
 
     const refreshToken = generateRefreshToken({
-      sessionId: sessionId,
+      sessionId,
       sub: user.id,
     });
 
@@ -86,15 +86,22 @@ export async function POST(req: NextRequest) {
     cookieStore.set("refresh_token", refreshToken, {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      sameSite: "strict",
-      expires: 7 * 24 * 60 * 60,
+      sameSite: "lax",
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      path: "/",
+    });
+    cookieStore.set("access_token", accessToken, {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+      expires: new Date(Date.now() + 15 * 60 * 1000),
       path: "/",
     });
 
     return NextResponse.json(
       {
         accessToken,
-        user: { email: user.email, id: user.id },
+        user: { email: user.email, id: user.id, role: user.role },
       },
       { status: 200 }
     );
@@ -102,7 +109,7 @@ export async function POST(req: NextRequest) {
     console.log(e);
     return NextResponse.json(
       {
-        message: "Internal Server Error",
+        error: "Internal Server Error",
       },
       { status: 500 }
     );

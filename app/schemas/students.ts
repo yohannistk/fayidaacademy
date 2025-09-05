@@ -27,6 +27,6 @@ export const StudentSchema = z.object({
   referralSource: ReferralSourceEnum,
 });
 
-export type ReferralSource = z.infer<typeof ReferralSourceEnum>;
-export type Grade = z.infer<typeof GradeSchema>;
-export type Student = z.infer<typeof StudentSchema>;
+export type ReferralSourceT = z.infer<typeof ReferralSourceEnum>;
+export type GradeT = z.infer<typeof GradeSchema>;
+export type StudentT = z.infer<typeof StudentSchema>;

@@ -5,7 +5,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "@/utils/auth";
-import prisma from "@/app/lib/prisma";
+import prisma from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const refreshToken = cookieStore.get("refresh_token")?.value;
     if (!refreshToken) {
       return NextResponse.json(
-        { message: "No Refresh token was found" },
+        { error: "No Refresh token was found" },
         { status: 401 }
       );
     }
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const payload = verifyRefreshToken(refreshToken);
     if (!payload) {
       return NextResponse.json(
-        { message: "Invalid refresh token" },
+        { error: "Invalid refresh token" },
         { status: 401 }
       );
     }
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     const session = await prisma.sessions.findUnique({
       where: { id: payload.sessionId, refreshToken },
     });
+    console.log("session", payload.sessionId);
     if (!session || session.expiresAt < new Date()) {
       cookieStore.delete("refresh_token");
       return NextResponse.json({ error: "Session expired" }, { status: 401 });
@@ -68,14 +69,22 @@ export async function POST(req: NextRequest) {
     cookieStore.set("refresh_token", newRefreshToken, {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      sameSite: "strict",
-      expires: 7 * 24 * 60 * 60,
+      sameSite: "lax",
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      path: "/",
+    });
+    cookieStore.set("access_token", accessToken, {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+      expires: new Date(Date.now() + 15 * 60 * 1000),
       path: "/",
     });
 
     return NextResponse.json(
       {
         accessToken,
+        message: "Toekn refreshed",
       },
       { status: 200 }
     );

@@ -1,4 +1,4 @@
-import prisma from "@/app/lib/prisma";
+import prisma from "@/lib/prisma";
 import { AdminSchema } from "@/app/schemas/admin";
 import { hashPassword } from "@/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -16,19 +16,19 @@ export async function DELETE(req: NextRequest) {
   const id = body.id;
   if (!id)
     return NextResponse.json(
-      { message: "Id is required to delete the student" },
+      { error: "Id is required to delete the student" },
       { status: 400 }
     );
   try {
     const user = await prisma.users.findUnique({ where: { id } });
     if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     await prisma.users.delete({ where: { id } });
   } catch (e) {
     return NextResponse.json(
-      { message: "Internal Server Error" },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     console.log(e);
     return NextResponse.json(
       {
-        message: "Internal server error",
+        error: "Internal server error",
       },
       { status: 500 }
     );

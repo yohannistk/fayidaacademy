@@ -27,7 +27,7 @@ export const generateAccessToken = (user: {
   email: string;
   role: Role;
 }) => {
-  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "15m" });
+  return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET!, { expiresIn: "20m" });
 };
 export const generateRefreshToken = (user: {
   sub: string;
@@ -43,6 +43,19 @@ export const verifyRefreshToken = (token: string) => {
     let payload = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!) as {
       sub: string;
       sessionId: string;
+    };
+    return payload;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const verifyAccessToken = (token: string) => {
+  try {
+    let payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as {
+      sub: string;
+      email: string;
+      role: Role;
     };
     return payload;
   } catch (e) {
