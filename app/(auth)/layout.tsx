@@ -1,19 +1,9 @@
-import { isUserLoggedIn } from "@/actions/auth";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import React, { PropsWithChildren } from "react";
 import { ArrowLeftIcon, PlayCircle } from "lucide-react";
 import Link from "next/link";
 const AuthLayout = async ({ children }: PropsWithChildren) => {
-  const user = await isUserLoggedIn();
-  if (user) {
-    if (user.role === "STUDENT") {
-      redirect("/dashboard");
-    } else {
-      redirect("/admin/dashboard");
-    }
-  }
-
   return (
     <>
       <div className="h-full w-full relative lg:p-24 grid grid-cols-1 xl:grid-cols-2 gap-12 xl:gap-28">

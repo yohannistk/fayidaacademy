@@ -3,13 +3,14 @@ import Button from "@/components/fayida-custom-button";
 import Input from "@/components/fayida-custom-input";
 import { SignInSchema, SignInSchemaT } from "@/app/schemas/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios, { AxiosError } from "axios";
 import { Loader } from "lucide-react";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { createClient } from "@/utils/supabase/client";
+import { addSession, updateLoginStreak } from "@/utils/supabase/healper";
 
 const SigninPage = () => {
   const [loading, setLoading] = useState(false);
@@ -21,24 +22,29 @@ const SigninPage = () => {
   } = useForm<SignInSchemaT>({
     resolver: zodResolver(SignInSchema),
   });
+  const supabase = createClient();
+
   const onSubmit = async (data: SignInSchemaT) => {
     try {
       setLoading(true);
-      const res = await axios.post("/api/auth/sign-in", data, {
-        withCredentials: true,
+      const { error, data: userData } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
       });
-      console.log(res.data.user.role);
 
-      if (res.data.user.role == "STUDENT") {
-        router.push("/dashboard");
-      } else {
-        router.push("/admin/dashboard");
+      if (error) {
+        toast.error(error.message || "Invalid email or password");
+        return;
       }
-    } catch (e) {
-      if (e instanceof AxiosError) {
-        console.log(e.response?.data);
-        toast(e.response?.data.error);
-      }
+
+      toast.success("Signed in successfully!");
+      await updateLoginStreak(userData.user.id);
+      await addSession(userData.user.id, navigator.userAgent, "127.0.0.1");
+      router.push("/dashboard");
+      router.refresh();
+    } catch (e: any) {
+      console.log(e);
+      toast.error(e.message || "An error occurred during sign-in");
     } finally {
       setLoading(false);
     }

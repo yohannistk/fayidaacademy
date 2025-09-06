@@ -1,72 +1,75 @@
 "use server";
+import { Profile } from "@/types";
+import { createClient } from "@/utils/supabase/server";
 
-import { cookies } from "next/headers";
-import { verifyAccessToken } from "@/utils/auth";
-import { NextRequest } from "next/server";
+export async function getProfile(): Promise<Profile | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
 
-export async function isUserLoggedIn(
-  request?: NextRequest
-): Promise<{ sub: string; email: string; role: string } | null> {
-  const cookieStore = request ? request.cookies : await cookies();
-  const accessToken = cookieStore.get("access_token")?.value;
-  let payload: { sub: string; email: string; role: string } | null = null;
-  if (accessToken) {
-    payload = verifyAccessToken(accessToken);
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  if (error) {
+    console.error(error);
+    return null;
   }
 
-  if (!payload) {
-    const refreshToken = cookieStore.get("refresh_token")?.value;
-    if (!refreshToken) {
-      return null;
-    }
+  return data;
+}
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+export async function getAllStudents(): Promise<Profile[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-    try {
-      const refreshResponse = await fetch(`${baseUrl}/api/auth/refresh-token`, {
-        method: "POST",
-        headers: {
-          Cookie: `refresh_token=${refreshToken}`,
-        },
-      });
-      console.log("Inside server function");
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return data;
+}
 
-      if (!refreshResponse.ok) {
-        throw new Error("Refresh failed");
-      }
+export async function updateLoginStreak(userId: string) {
+  const supabase = await createClient();
 
-      const data = await refreshResponse.json();
-      const newAccessToken = data.accessToken;
-      if (!newAccessToken) {
-        throw new Error("No access token in refresh response");
-      }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("streak, last_login")
+    .eq("id", userId)
+    .single();
 
-      payload = verifyAccessToken(newAccessToken);
-      if (!payload) {
-        throw new Error("Invalid new access token");
-      }
+  if (!profile) return;
 
-      if (!request) {
-        cookieStore.set("access_token", newAccessToken, {
-          secure: process.env.NODE_ENV === "production",
-          httpOnly: true,
-          sameSite: "lax",
-          expires: new Date(Date.now() + 1 * 60 * 1000),
-          // expires: new Date(Date.now() + 15 * 60 * 1000),
-          path: "/",
-        });
-      }
+  const now = new Date();
+  const lastLogin = profile.last_login ? new Date(profile.last_login) : null;
+  console.log(lastLogin);
+  let newStreak = 1;
 
-      return payload;
-    } catch (e) {
-      console.log(e);
-      // if (!request) {
-      //   cookieStore.delete("access_token");
-      //   cookieStore.delete("refresh_token");
-      // }
-      return null;
+  if (lastLogin) {
+    const diffDays = Math.floor(
+      (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (diffDays === 1) {
+      newStreak = profile.streak + 1;
+    } else if (diffDays > 1) {
+      newStreak = 1;
+    } else {
+      newStreak = profile.streak;
     }
   }
+  await supabase
+    .from("profiles")
+    .update({ streak: newStreak, last_login: now.toISOString() })
+    .eq("id", userId);
 
-  return payload;
+  return newStreak;
 }

@@ -1,18 +1,15 @@
 "use client";
-
 import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Label } from "@/components/ui/label";
-import { Grade } from "@prisma/client";
 import { StudentSchema, StudentT } from "@/app/schemas/students";
 import Input from "@/components/fayida-custom-input";
 import { Button } from "@/components/ui/button";
-import axios from "@/app/axios";
 import { useRouter } from "next/navigation";
-import { AxiosError } from "axios";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 const cities = ["Addis Ababa", "Bahir Dar", "Mekelle"];
 const regions = ["Addis Ababa", "Amhara", "Tigray"];
@@ -26,15 +23,20 @@ const referralOptions = [
   "Other",
 ];
 
-interface Props {
-  grades: Grade[];
-}
+const grades = [
+  { id: "1", name: "Grade 9" },
+  { id: "2", name: "Grade 10" },
+  { id: "3", name: "Grade 11" },
+  { id: "4", name: "Grade 12" },
+];
 
-const SignupForm: React.FC<Props> = ({ grades }) => {
+interface Props {}
+
+const SignupForm: React.FC<Props> = ({}) => {
   const [step, setStep] = useState(1);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-
+  const supabase = createClient();
   const {
     register,
     handleSubmit,
@@ -45,7 +47,7 @@ const SignupForm: React.FC<Props> = ({ grades }) => {
       city: "",
       region: "",
       referralSource: "Other",
-      gradeId: grades[0]?.id || "",
+      grade: grades[0]?.id || "",
     },
   });
 
@@ -56,17 +58,55 @@ const SignupForm: React.FC<Props> = ({ grades }) => {
       alert("Passwords do not match");
       return;
     }
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const res = await axios.post("api/student", data, {
-        withCredentials: true,
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            fullName: `${data.firstName} ${data.lastName}`,
+          },
+        },
       });
-      toast("Registered");
-    } catch (e) {
-      if (e instanceof AxiosError) {
-        console.log(e.response?.data);
-        toast(e.response?.data.error);
+
+      if (authError) {
+        throw new Error(authError.message);
       }
+
+      const user = authData.user;
+
+      if (!user) {
+        throw new Error("User creation failed");
+      }
+
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: user.id,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        grand_name: data.grandName,
+        age: data.age,
+        school_name: data.schoolName,
+        city: data.city,
+        region: data.region,
+        email: data.email,
+        grade: grades.find((g) => g.id === data.grade)?.name,
+        referral_source: data.referralSource,
+      });
+
+      if (profileError) {
+        throw new Error(profileError.message);
+      }
+
+      toast.success(
+        "Registration successful! Please check your email to confirm."
+      );
+      router.push("/sign-in");
+    } catch (e: any) {
+      toast.error(`Failed to register: ${e.message}`);
     } finally {
       setLoading(false);
     }
@@ -121,7 +161,7 @@ const SignupForm: React.FC<Props> = ({ grades }) => {
               <Label>Grade *</Label>
               <select
                 className="w-full border rounded block px-4 py-3 mt-2"
-                {...register("gradeId")}
+                {...register("grade")}
               >
                 {grades.map((g) => (
                   <option key={g.id} value={g.id}>
@@ -129,8 +169,8 @@ const SignupForm: React.FC<Props> = ({ grades }) => {
                   </option>
                 ))}
               </select>
-              {errors.gradeId && (
-                <p className="text-red-500">{errors.gradeId.message}</p>
+              {errors.grade && (
+                <p className="text-red-500">{errors.grade.message}</p>
               )}
             </div>
           </div>

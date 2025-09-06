@@ -7,9 +7,13 @@ import {
   Bot,
   ChevronDown,
   LucideBell,
+  LogOut,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { User } from "@supabase/supabase-js";
+import Button from "./fayida-custom-button";
+import { createClient } from "@/utils/supabase/client";
 
 const components: { title: string; href: string; description: string }[] = [
   {
@@ -92,9 +96,23 @@ function MoreMenu() {
   );
 }
 
-const Navigation = () => {
+interface NavigationProps {
+  user?: User | null;
+}
+const Navigation = ({ user }: NavigationProps) => {
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    const sessionId = localStorage.getItem("sessionId");
+    if (sessionId) {
+      await supabase.from("user_sessions").delete().eq("id", sessionId);
+      localStorage.removeItem("sessionId");
+    }
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
   return (
-    <nav className="w-full left-1/2 bg-white rounded-full -translate-x-1/2 max-w-[90rem] mx-auto fixed top-5">
+    <nav className="w-full left-1/2 z-20 bg-white rounded-full -translate-x-1/2 max-w-[90rem] mx-auto fixed top-5">
       <div className="mx-auto flex items-center justify-between px-4 py-2">
         <div className="flex items-center gap-7">
           <Link href="/">
@@ -121,12 +139,21 @@ const Navigation = () => {
           <button>
             <LucideBell size={30} className="text-primary" />
           </button>
-          <Link
-            href="/sign-in"
-            className="rounded-full border-2 px-4 font-medium py-2 text-white bg-primary"
-          >
-            Signin
-          </Link>
+          {!user ? (
+            <Link
+              href="/sign-in"
+              className="rounded-full border-1 px-8 font-medium py-2 text-white bg-primary"
+            >
+              Signin
+            </Link>
+          ) : (
+            <button
+              onClick={handleLogout}
+              className="rounded-full border-1 px-4 font-medium py-2 text-red-400 bg-transparent flex items-center gap-2"
+            >
+              <LogOut /> Logout
+            </button>
+          )}
         </div>
       </div>
     </nav>

@@ -1,97 +1,58 @@
-import { NextResponse, NextRequest } from "next/server";
-import { verifyAccessToken } from "@/utils/auth";
-
-export const runtime = "nodejs";
+import { type NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const protectedRoutes = ["/dashboard"];
+  const path = request.nextUrl.pathname;
+
+  if (protectedRoutes.includes(path) && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/sign-in";
+    return NextResponse.redirect(url);
+  }
 
   if (
-    pathname.startsWith("/api/") ||
-    pathname.startsWith("/_next/") ||
-    pathname === "/sign-in" ||
-    pathname === "/sign-up" ||
-    pathname === "/forgot-password" ||
-    pathname === "/"
+    user &&
+    (path === "/sign-in" ||
+      path === "/" ||
+      path === "/sign-up" ||
+      path === "/forgot-password")
   ) {
-    return NextResponse.next();
-  }
-  console.log("Inside the middleware");
-
-  const isAdminPath = pathname.startsWith("/admin/");
-  const isStudentPath = pathname.startsWith("/dashboard");
-  if (!isAdminPath && !isStudentPath) {
-    return NextResponse.next();
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
   }
 
-  const accessToken = request.cookies.get("access_token")?.value;
-  let payload: { sub: string; email: string; role: string } | null = null;
-
-  if (accessToken) {
-    payload = verifyAccessToken(accessToken);
-  }
-
-  if (!payload) {
-    const refreshToken = request.cookies.get("refresh_token")?.value;
-    if (!refreshToken) {
-      return NextResponse.redirect(new URL("/sign-in", request.url));
-    }
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-    try {
-      const refreshResponse = await fetch(`${baseUrl}/api/auth/refresh-token`, {
-        method: "POST",
-        headers: {
-          Cookie: `refresh_token=${refreshToken}`,
-        },
-      });
-      const data = await refreshResponse.json();
-      const newAccessToken = data.accessToken;
-      if (!newAccessToken) {
-        throw new Error("No access token in refresh response");
-      }
-
-      payload = verifyAccessToken(newAccessToken);
-      if (!payload) {
-        throw new Error("Invalid new access token");
-      }
-
-      const response = NextResponse.next();
-      response.cookies.set("access_token", newAccessToken, {
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
-        sameSite: "lax",
-        // expires: new Date(Date.now() + 15 * 60 * 1000),
-        expires: new Date(Date.now() + 1 * 60 * 1000),
-        path: "/",
-      });
-      return response;
-    } catch (e) {
-      console.log(e);
-      const response = NextResponse.redirect(new URL("/sign-in", request.url));
-      response.cookies.delete("access_token");
-      response.cookies.delete("refresh_token");
-      return response;
-    }
-  }
-
-  const role = payload.role;
-
-  if (isAdminPath && role !== "ADMIN") {
-    return NextResponse.json(
-      { error: "Forbidden: Admin access required" },
-      { status: 403 }
-    );
-  }
-  if (isStudentPath && role !== "STUDENT") {
-    return NextResponse.json(
-      { error: "Forbidden: Student access required" },
-      { status: 403 }
-    );
-  }
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dashboard/:path*"],
+  matcher: [
+    "/dashboard",
+    "/login",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

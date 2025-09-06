@@ -1,11 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import SignupForm from "./components/signup-form";
-import prisma from "@/lib/prisma";
 
 const SignUpPage = async () => {
-  const grades = await prisma.grade.findMany();
   return (
     <div className="max-w-lg w-full mx-auto">
       <p className="text-base text-gray-500 mb-6">
@@ -23,7 +20,7 @@ const SignUpPage = async () => {
           Sign in
         </Link>
       </p>
-      <SignupForm grades={grades} />
+      <SignupForm />
     </div>
   );
 };

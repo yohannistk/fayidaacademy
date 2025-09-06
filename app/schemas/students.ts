@@ -23,7 +23,7 @@ export const StudentSchema = z.object({
   region: z.string().min(1, "Region is required"),
   email: z.email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  gradeId: z.string(),
+  grade: z.string(),
   referralSource: ReferralSourceEnum,
 });
 

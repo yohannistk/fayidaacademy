@@ -1,5 +1,4 @@
-import Navigation from "@/components/main-navigation";
-import { BarChart, BookOpen, FileText, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import Image from "next/image";
 
 export default function Home() {
@@ -14,7 +13,6 @@ export default function Home() {
           className="object-cover -z-10"
         />
         <div className="max-w-[90rem] mx-auto">
-          <Navigation />
           <section className="py-16 ">
             <div className="mx-auto px-4">
               <div className="flex flex-col lg:flex-row gap-5 items-center">
