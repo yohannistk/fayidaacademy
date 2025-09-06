@@ -1,7 +1,8 @@
 import { courses } from "@/constants";
-import { ArrowLeft, ArrowLeftIcon, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import PlayVedio from "../components/play-vedio";
 
 const PlayPage = ({ params }: { params: { id: string } }) => {
   const videoId = params.id;
@@ -18,9 +19,7 @@ const PlayPage = ({ params }: { params: { id: string } }) => {
           Playing Course : {course?.title}
         </h1>
       </div>
-      <video src={url} controls className="w-full rounded-lg shadow-lg">
-        Your browser does not support the video tag.
-      </video>
+      <PlayVedio id={params.id} />
     </div>
   );
 };
