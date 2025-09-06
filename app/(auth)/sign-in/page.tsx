@@ -44,6 +44,7 @@ const SigninPage = () => {
       router.refresh();
     } catch (e: any) {
       console.log(e);
+      supabase.auth.signOut();
       toast.error(e.message || "An error occurred during sign-in");
     } finally {
       setLoading(false);

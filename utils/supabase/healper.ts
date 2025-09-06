@@ -1,3 +1,4 @@
+import { sendEmail } from "@/actions/sendEmail";
 import { createClient } from "./client";
 
 const supabase = createClient();
@@ -47,6 +48,10 @@ export async function addSession(
     .eq("user_id", userId);
 
   if (sessions && sessions.length >= 2) {
+    sendEmail({
+      subject: "Maximum Active Sessions Reached",
+      text: `User with ID ${userId} and name has reached the maximum number of active sessions.`,
+    });
     throw new Error("Maximum active sessions reached");
   }
 
