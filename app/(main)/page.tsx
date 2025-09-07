@@ -28,7 +28,7 @@ export default function Home() {
                   <div className="w-full h-16 bg-white rounded-full border flex mt-5 max-w-md">
                     <input
                       placeholder="Search over 5000 courses"
-                      className="flex-3/4 font-semibold text-lg h-full outline-none p-5"
+                      className="flex-3/4 font-semibold text-gray-600 text-lg h-full outline-none p-5"
                     />
                     <button className="h-full rounded-r-full cursor-pointer px-4 text-white bg-primary flex items-center gap-3 font-bold">
                       Search <Search />

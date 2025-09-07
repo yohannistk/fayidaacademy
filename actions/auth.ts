@@ -50,14 +50,13 @@ export async function updateLoginStreak(userId: string) {
 
   const now = new Date();
   const lastLogin = profile.last_login ? new Date(profile.last_login) : null;
-  console.log(lastLogin);
   let newStreak = 1;
 
   if (lastLogin) {
     const diffDays = Math.floor(
       (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24)
     );
-
+    console.log("diffDays", diffDays);
     if (diffDays === 1) {
       newStreak = profile.streak + 1;
     } else if (diffDays > 1) {

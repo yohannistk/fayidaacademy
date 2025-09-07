@@ -112,8 +112,8 @@ const Navigation = ({ user }: NavigationProps) => {
     window.location.href = "/";
   };
   return (
-    <nav className="w-full left-1/2 z-20 bg-white rounded-full -translate-x-1/2 max-w-[90rem] mx-auto fixed top-5">
-      <div className="mx-auto flex items-center justify-between px-4 py-2">
+    <nav className="w-full px-3 z-50 fixed left-1/2 -translate-x-1/2 top-5">
+      <div className="mx-auto py-1 bg-white rounded-full  max-w-[90rem] md:mx-auto flex items-center justify-between px-4">
         <div className="flex items-center gap-7">
           <Link href="/">
             <Image
@@ -142,7 +142,7 @@ const Navigation = ({ user }: NavigationProps) => {
           {!user ? (
             <Link
               href="/sign-in"
-              className="rounded-full border-1 px-8 font-medium py-2 text-white bg-primary"
+              className="rounded-full cursor-pointer border-2 border-primary px-8 font-medium py-2 text-primary bg-transparent "
             >
               Signin
             </Link>
